@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+@import 'tailwindcss';
+@import 'design-system-project/styles/colors.css';
+@import 'design-system-project/styles/typography.css';
+
+/* Scan the installed design-system package's compiled output for the
+   Tailwind utility classes its components use, so those utilities are
+   generated here too. */
+@source '../node_modules/design-system-project/dist';
+
+body {
+  margin: 0;
+  background: var(--color-background-white);
+  color: var(--color-text-primary);
+}
