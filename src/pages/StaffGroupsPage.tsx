@@ -2,13 +2,14 @@ import { Button, DataTable, Footer, IconButton, ListToolbar, PageHeader, SearchI
 import { ChevronRight, Filter, MoreVertical } from 'iqons-react'
 import { useMemo, useState } from 'react'
 import { staffGroups, type StaffGroup } from '../data/staffGroups'
+import type { StaffMember } from '../data/staff'
 
-const columns: DataTableColumn<StaffGroup>[] = [
-  { key: 'code', header: 'Code' },
-  { key: 'name', header: 'Name' },
-  { key: 'description', header: 'Description' },
-  { key: 'creationDate', header: 'Creation date' },
-]
+type StaffGroupsPageProps = {
+  staffMembers: StaffMember[]
+  groupRoleAssignments: Record<string, Set<string>>
+  groupMemberships: Record<string, Set<string>>
+  onSelectGroup: (groupId: string) => void
+}
 
 // Reached via the "Staff Groups" nav item (AdminHub 67:23279). The
 // "Filters" button has no defined filterable field in this data (unlike
@@ -16,10 +17,25 @@ const columns: DataTableColumn<StaffGroup>[] = [
 // the other ambiguous controls flagged in earlier passes. Row selection is
 // real (matches the Activities page) but has no bulk action to drive.
 // "Create staff group" is rendered but not wired to a creation flow, since
-// none is designed.
-export function StaffGroupsPage() {
+// none is designed. Rows are now clickable — per the RBAC proposal, Staff
+// Groups is the crux of the hierarchy and previously had no drill-in at
+// all (unlike Staff Members).
+export function StaffGroupsPage({ staffMembers, groupRoleAssignments, groupMemberships, onSelectGroup }: StaffGroupsPageProps) {
   const [query, setQuery] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const columns: DataTableColumn<StaffGroup>[] = [
+    { key: 'code', header: 'Code' },
+    { key: 'name', header: 'Name' },
+    { key: 'description', header: 'Description' },
+    { key: 'creationDate', header: 'Creation date' },
+    { key: 'roleCount', header: 'Roles', render: (group) => String(groupRoleAssignments[group.id]?.size ?? 0) },
+    {
+      key: 'memberCount',
+      header: 'Members',
+      render: (group) => String(staffMembers.filter((member) => groupMemberships[member.id]?.has(group.id)).length),
+    },
+  ]
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -65,6 +81,7 @@ export function StaffGroupsPage() {
           rows={filtered}
           getRowKey={(row) => row.id}
           emptyMessage="No staff groups match your search."
+          onRowClick={(group) => onSelectGroup(group.id)}
           renderExpand={() => <ChevronRight className="h-5 w-5 text-text-secondary" />}
           selection={{
             isSelected: (row) => selectedIds.has(row.id),

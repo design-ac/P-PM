@@ -1,6 +1,7 @@
 import { Admin, Shield, User, UserGroup } from 'iqons-react'
 import { NavigationDrawer, Rail, type NavigationDrawerSection } from 'design-system-project'
 import type { ReactNode } from 'react'
+import { staffGroups } from '../data/staffGroups'
 import type { Route, RbacChild } from '../types/route'
 
 type StaffCounts = { total: number; active: number; inactive: number }
@@ -16,7 +17,6 @@ const RBAC_CHILDREN: Array<{ id: RbacChild; label: string }> = [
   { id: 'staff-member-roles', label: 'Staff member roles' },
   { id: 'roles', label: 'Roles' },
   { id: 'activities', label: 'Activities' },
-  { id: 'role-mapping', label: 'Role mapping' },
 ]
 
 export function AppShell({ route, onNavigate, staffCounts, children }: AppShellProps) {
@@ -63,8 +63,8 @@ export function AppShell({ route, onNavigate, staffCounts, children }: AppShellP
       id: 'staff-groups',
       icon: <UserGroup />,
       label: 'Staff Groups',
-      count: 1250,
-      onSelect: () => onNavigate({ section: 'staff-groups' }),
+      count: staffGroups.length,
+      onSelect: () => onNavigate({ section: 'staff-groups', selectedGroupId: null }),
     },
   ]
 

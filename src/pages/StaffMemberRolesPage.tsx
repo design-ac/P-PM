@@ -1,5 +1,6 @@
 import { Button, PageHeader, SearchInput, Text } from 'design-system-project'
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { PermissionMatrix } from '../components/PermissionMatrix'
 import type { StaffRole } from '../data/roles'
 import type { StaffMember } from '../data/staff'
 
@@ -135,61 +136,18 @@ export function StaffMemberRolesPage({ staffMembers, roles, assignments, onToggl
               {roleTypeLabel}
             </Text>
 
-            <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
-              <div className="relative w-8 shrink-0">
-                <Text
-                  as="p"
-                  variant="h1"
-                  className="absolute top-1/2 left-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2 -rotate-90 whitespace-nowrap text-center"
-                >
-                  Staff members
-                </Text>
-              </div>
-
-              <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto">
-                <div className="grid h-max w-max gap-x-2 gap-y-2" style={{ gridTemplateColumns: `200px repeat(${roles.length}, 40px)` }}>
-                  <div className="h-[140px]" />
-                  {roles.map((role) => (
-                    <div key={role.id} className="relative h-[140px] w-[40px]">
-                      <div className="absolute bottom-2 left-3 origin-bottom-left -rotate-45 whitespace-nowrap">
-                        <span className="type-overline text-text-primary">{role.name}</span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {filteredStaff.map((member) => {
-                    const label = member.title && member.title !== '-' ? `${member.title} ${member.name}` : member.name
-                    return (
-                      <Fragment key={member.id}>
-                        <div className="flex items-center justify-end pr-2">
-                          <span className="type-overline whitespace-nowrap text-text-primary">{label}</span>
-                        </div>
-                        {roles.map((role) => {
-                          const checked = assignments[member.id]?.has(role.id) ?? false
-                          return (
-                            <button
-                              key={role.id}
-                              type="button"
-                              role="checkbox"
-                              aria-checked={checked}
-                              aria-label={`${checked ? 'Remove' : 'Assign'} ${role.name} for ${label}`}
-                              disabled={!isEditing}
-                              onClick={() => onToggleAssignment(member.id, role.id)}
-                              className={[
-                                'flex h-[40px] w-[40px] items-center justify-center rounded-lg border bg-background-white transition-colors',
-                                isEditing ? 'cursor-pointer border-other-border hover:bg-action-hover' : 'cursor-default border-transparent',
-                              ].join(' ')}
-                            >
-                              {checked ? <span className="h-6 w-6 rounded bg-primary-main" /> : null}
-                            </button>
-                          )
-                        })}
-                      </Fragment>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
+            <PermissionMatrix
+              rows={filteredStaff}
+              columns={roles}
+              getRowId={(member) => member.id}
+              getRowLabel={(member) => (member.title && member.title !== '-' ? `${member.title} ${member.name}` : member.name)}
+              getColId={(role) => role.id}
+              getColLabel={(role) => role.name}
+              isChecked={(staffId, roleId) => assignments[staffId]?.has(roleId) ?? false}
+              onToggle={(staffId, roleId) => onToggleAssignment(staffId, roleId)}
+              editable={isEditing}
+              rowAxisLabel="Staff members"
+            />
 
             <div className="flex shrink-0 items-center justify-between pt-2">
               <div className="flex items-center gap-2">

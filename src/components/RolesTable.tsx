@@ -1,6 +1,7 @@
 import { Button, DataTable, Footer, IconButton, ListToolbar, SearchInput, type DataTableColumn } from 'design-system-project'
-import { ChevronRight, MoreVertical } from 'iqons-react'
+import { ChevronDown, ChevronRight, MoreVertical } from 'iqons-react'
 import { useMemo, useState } from 'react'
+import type { Activity } from '../data/activities'
 import { staffRoles, type StaffRole } from '../data/roles'
 
 type RoleTypeFilter = 'all' | 'vision' | 'smartcard'
@@ -11,11 +12,19 @@ const ROLE_TYPE_OPTIONS: Array<{ value: RoleTypeFilter; label: string }> = [
   { value: 'smartcard', label: 'Smartcard roles' },
 ]
 
-const columns: DataTableColumn<StaffRole>[] = [
-  { key: 'code', header: 'Code' },
-  { key: 'name', header: 'Name' },
-  { key: 'description', header: 'Description' },
-]
+type RolesTableProps = {
+  activities: Activity[]
+  roleActivityAssignments: Record<string, Set<string>>
+}
+
+function buildColumns(roleActivityAssignments: Record<string, Set<string>>): DataTableColumn<StaffRole>[] {
+  return [
+    { key: 'code', header: 'Code' },
+    { key: 'name', header: 'Name' },
+    { key: 'description', header: 'Description' },
+    { key: 'activityCount', header: 'Activities', render: (role) => String(roleActivityAssignments[role.id]?.size ?? 0) },
+  ]
+}
 
 // Shared between the standalone Roles screen (Security & RBAC > Roles) and
 // the Staff Member Details roles tab, since both use the identical table
@@ -30,11 +39,26 @@ const columns: DataTableColumn<StaffRole>[] = [
 // plain column, which put it after the selection checkbox — wrong order,
 // per the Staff Groups table where both exist together). Selection is real
 // (toggleable, select-all works) but has no bulk action to drive, same
-// caveat as every other table with checkboxes in this app.
-export function RolesTable() {
+// caveat as every other table with checkboxes in this app. Expand is now
+// functional (not just decorative) — it reveals which activities the role
+// grants, per the RBAC proposal's "row expand reveals the activity list
+// inline" recommendation.
+export function RolesTable({ activities, roleActivityAssignments }: RolesTableProps) {
   const [query, setQuery] = useState('')
   const [roleType, setRoleType] = useState<RoleTypeFilter>('all')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const columns = useMemo(() => buildColumns(roleActivityAssignments), [roleActivityAssignments])
+  const activityLookup = useMemo(() => new Map(activities.map((activity) => [activity.id, activity])), [activities])
+
+  const toggleExpand = (role: StaffRole) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(role.id)) next.delete(role.id)
+      else next.add(role.id)
+      return next
+    })
+  }
 
   const filteredRoles = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -94,7 +118,34 @@ export function RolesTable() {
           rows={filteredRoles}
           getRowKey={(row) => row.id}
           emptyMessage="No roles match your search."
-          renderExpand={() => <ChevronRight className="h-5 w-5 text-text-secondary" />}
+          renderExpand={(role) =>
+            expandedIds.has(role.id) ? (
+              <ChevronDown className="h-5 w-5 text-text-secondary" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-text-secondary" />
+            )
+          }
+          isRowExpanded={(role) => expandedIds.has(role.id)}
+          onToggleExpand={toggleExpand}
+          renderExpandedContent={(role) => {
+            const activityIds = Array.from(roleActivityAssignments[role.id] ?? [])
+            if (activityIds.length === 0) {
+              return <span className="type-body-two text-text-secondary">This role doesn't grant any activities yet.</span>
+            }
+            return (
+              <div className="flex flex-wrap gap-2">
+                {activityIds.map((activityId) => {
+                  const activity = activityLookup.get(activityId)
+                  if (!activity) return null
+                  return (
+                    <span key={activityId} className="type-chip rounded-full border border-other-border px-3 py-1 text-text-primary">
+                      {activity.name}
+                    </span>
+                  )
+                })}
+              </div>
+            )
+          }}
           selection={{
             isSelected: (row) => selectedIds.has(row.id),
             onToggleRow: toggleRow,

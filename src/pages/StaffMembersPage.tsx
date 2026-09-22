@@ -1,5 +1,5 @@
 import { DataTable, IconButton, ListToolbar, PageHeader, SearchInput, StatusBadge, type DataTableColumn } from 'design-system-project'
-import { ChevronRight, Edit } from 'iqons-react'
+import { MoreVertical } from 'iqons-react'
 import { useMemo, useState } from 'react'
 import { EditStaffMemberModal } from '../components/EditStaffMemberModal'
 import { StatusFilterMenu } from '../components/StatusFilterMenu'
@@ -90,14 +90,13 @@ export function StaffMembersPage({
           getRowKey={(row) => row.id}
           emptyMessage="No staff members match your filters."
           onRowClick={onSelectMember}
-          renderExpand={() => <ChevronRight className="h-5 w-5 text-text-secondary" />}
           selection={{
             isSelected: (row) => selectedIds.has(row.id),
             onToggleRow: toggleRow,
             allSelected,
             onToggleAll: toggleAll,
           }}
-          renderRowActions={(row) => <IconButton icon={<Edit />} aria-label={`Edit ${row.name}`} onClick={() => setEditingMember(row)} />}
+          renderRowActions={(row) => <IconButton icon={<MoreVertical />} aria-label={`${row.name} actions`} onClick={() => setEditingMember(row)} />}
         />
       </div>
 
